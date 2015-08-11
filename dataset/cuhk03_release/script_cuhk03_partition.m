@@ -73,7 +73,9 @@ for idx_partition=1:num_partition
     Partition(idx_partition).ix_train_gallery = idx_train_gallery>0;
     Partition(idx_partition).ix_test_gallery = idx_test_gallery>0;
     
-    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_train);
+    % each camera pair should have unique pos-neg identity pairs
+    camIDp = camID+camPair*10;
+    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_train,camIDp(Partition(idx_partition).idx_train),10);
     Partition(idx_partition).idx_train_pos_pair = uint16(ix_pos_pair); % positive pairs for train set
     Partition(idx_partition).idx_train_neg_pair = uint16(ix_neg_pair); % negative pairs for train set
 %     for k =1: num_trail
@@ -81,7 +83,7 @@ for idx_partition=1:num_partition
 %         ix_radp(k,:) = randperm(length(ix_neg_pair));
 %     end
 %     Partition(idx_partition).idx_train_radp = uint32(ix_radp);
-    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_test);
+    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_test,camIDp(Partition(idx_partition).idx_test),10);
     Partition(idx_partition).idx_test_pos_pair = uint16(ix_pos_pair); % positive pairs for test set
     Partition(idx_partition).idx_test_neg_pair = uint16(ix_neg_pair); % negative pairs for test set
 %     for k =1: num_trail
@@ -93,4 +95,5 @@ end
 if num_gal > 1 % keep N for multishot scenario
     partition_name = [partition_name, '_' num2str(num_gal)];
 end
-save(['Feature/' dataset '_Partition_' partition_name '.mat'], 'Partition', '-v7.3');
+save([dataset '_Partition_' partition_name '.mat'],'Partition','-v7.3');
+% save(['Feature/' dataset '_Partition_' partition_name '.mat'], 'Partition', '-v7.3');
