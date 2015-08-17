@@ -3,19 +3,26 @@
 flag_preFilter = 0;
 partition_name = 'Random';  %'Random'; %'SDALF'; % cam3ref
 
-Featurename = [dataset_name '_HistMoment' num2str(num_patch) 'Patch'];
-if flag_preFilter
-    fname = [dataset_name '_HistMoment' num2str(num_patch) 'Patch_wPreFiltering.mat'];
-else
-    fname = [dataset_name '_HistMoment' num2str(num_patch) 'Patch_woPreFiltering.mat'];
+% Featurename = [dataset_name '_HistMoment' num2str(num_patch) 'Patch'];
+% if flag_preFilter
+%     fname = [dataset_name '_HistMoment' num2str(num_patch) 'Patch_wPreFiltering.mat'];
+% else
+%     fname = [dataset_name '_HistMoment' num2str(num_patch) 'Patch_woPreFiltering.mat'];
+% end
+switch featureType
+    case 'HistLBP'
+        fname = [dataset_name '_Hist' num2str(num_patch) 'Patch'];
+    case 'CLBP'
+    case 'LFV'
 end
 
+Featurename = fname;
 load([dropbox_folder '/Feature/' fname]);
 %% picking the useful features
-if 1
-featurename = fieldnames(DataSet.idxfeature);
-idx_feat =[];
-if strcmp(algoname ,'oLFDA')
+% if 1
+% featurename = fieldnames(DataSet.idxfeature);
+% idx_feat =[];
+if 0% strcmp(algoname ,'oLFDA')
     % setting features for paper "Local Fisher Discriminant Analysis for 
     % Pedestrian Re-Identification". The major difference is not using
     % kernel technique and PCA is applied for preprocessing.
@@ -44,29 +51,38 @@ if strcmp(algoname ,'oLFDA')
     end
     
 else
-    % color histogram
-    for i = [1 2 3 7 8 4 5 6] %1: 9%length(featurename)
-         % do not use the V channel in HSV. Because it is redundant and
-            % the same as Y channel in YUV
-%         if strcmp(featurename{i}, 'HSVv')
-%             continue;
+%     % color histogram
+%     for i = [1 2 3 7 8 4 5 6] %1: 9%length(featurename)
+%          % do not use the V channel in HSV. Because it is redundant and
+%             % the same as Y channel in YUV
+% %         if strcmp(featurename{i}, 'HSVv')
+% %             continue;
+% %         end
+%         temp = getfield(DataSet.idxfeature, featurename{i});
+%         idx_feat = [idx_feat; temp(:)];
+%     end
+%     % LBP histogram
+%     for i = 10: 21%length(featurename)        
+%         if 	strcmp(featurename{i},'n8u2r1') || strcmp(featurename{i},'n16u2r2')
+%             temp = getfield(DataSet.idxfeature, featurename{i});
+%             idx_feat = [idx_feat; temp(:)];
 %         end
-        temp = getfield(DataSet.idxfeature, featurename{i});
-        idx_feat = [idx_feat; temp(:)];
-    end
-    % LBP histogram
-    for i = 10: 21%length(featurename)        
-        if 	strcmp(featurename{i},'n8u2r1') || strcmp(featurename{i},'n16u2r2')
-            temp = getfield(DataSet.idxfeature, featurename{i});
-            idx_feat = [idx_feat; temp(:)];
-        end
-    end
+%     end
         
-    if num_patch ==341 && ~strcmp(algoname ,'oLFDA') &&...
+%     if num_patch ==341 && ~strcmp(algoname ,'oLFDA') &&...
+%             ~strcmp(algoname ,'svmml') && ~strcmp(algoname ,'KISSME')
+%         Feature = sparse(double(DataSet.data(:, idx_feat)));
+%     else
+%         Feature = single(DataSet.data(:, idx_feat));
+%     end
+
+    % New appearance feature format   
+    Feature = FeatureAppearance;
+    if num_patch == 341 && ~strcmp(algoname ,'oLFDA') &&...
             ~strcmp(algoname ,'svmml') && ~strcmp(algoname ,'KISSME')
-        Feature = sparse(double(DataSet.data(:, idx_feat)));
+        Feature = sparse(double(Feature));
     else
-        Feature = single(DataSet.data(:, idx_feat));
+        Feature = single(Feature);
     end
     
     AlgoOption.doPCA = 0;  % flag for PCA preprocessing
@@ -84,18 +100,24 @@ else
         AlgoOption.doPCA = 1;
     end
 end
-
-else
-    fname = [dataset_name '_Hist' num2str(num_patch) 'Patch'];
-    load([dropbox_folder '/Feature/' fname]);
-    AlgoOption.doPCA = 0; 
-    Feature = FeatureAppearence;
-end
-clear DataSet;
+clear FeatureAppearance;
+% else
+%     fname = [dataset_name '_Hist' num2str(num_patch) 'Patch'];
+%     load([dropbox_folder '/Feature/' fname]);
+%     AlgoOption.doPCA = 0; 
+%     Feature = FeatureAppearence;
+% end
+% clear DataSet;
 %% load dataset partition
 load([dropbox_folder '/Feature/' dataset_name '_Partition_' partition_name '.mat']);
-load([dropbox_folder '/Dataset/' dataset_name '_Images.mat'], 'gID', 'camID')
-Partition = Partition(1:10);
+load([dropbox_folder '/Dataset/' dataset_name '_Images.mat'], 'gID', 'camID', 'camPair')
+if strfind(dataset_name,'cuhk')
+    % transfer camera pair gID to globalID
+    gID = gID + camPair*1000;
+end
+if ~strfind(dataset_name,'cuhk') && ~strcmp(dataset_name,'market1501')
+    Partition = Partition(1:10);
+end
 %%
 % The number of test times with the same train/test partition.
 % In each test, the gallery and prob set partion is randomly divided.
@@ -151,7 +173,7 @@ switch  algoname
         AlgoOption.nFold = 20;
 end
 
-if strfind(Featurename, 'COV')
+if strfind(fname, 'COV')
     AlgoOption.isCOV = 1;
     kname={'COV'};
 else

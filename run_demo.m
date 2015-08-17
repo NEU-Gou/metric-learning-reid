@@ -8,7 +8,9 @@ mkdir('Feature');
 % name of metric learning algorithm 
 algoname = 'LFDA'; %'oLFDA'; 'PCCA'; 'rPCCA'; 'LFDA'; 'MFA'; 'KISSME'; 'svmml' 
 % dataset name
-dataset_name = 'iLIDS'; %{'VIPeR' 'iLIDS' 'CAVIAR' '3DPeS'};
+dataset_name = 'cuhk03_detected'; %{'VIPeR' 'iLIDS' 'CAVIAR' '3DPeS'};
+% Feature types
+featureType = 'HistLBP';
 % number of patches(stripes)
 num_patch = 6; %6, 14, 75, 341
 % PCA dimension, ONLY used in KISSME
