@@ -82,9 +82,10 @@ for idx_partition=1:num_partition
     
     % each camera pair should have unique pos-neg identity pairs
     camIDp = camID+camPair*10;
-    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_valid,camIDp(Partition(idx_partition).idx_valid),10);
-    Partition(idx_partition).idx_valid_pos_pair = uint16(ix_pos_pair); % positive pairs for train set
-    Partition(idx_partition).idx_valid_neg_pair = uint16(ix_neg_pair); % negative pairs for train set
+    ID_train = gID(Partition(idx_partition).idx_train);
+    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_train,camIDp(Partition(idx_partition).idx_train),10);
+    Partition(idx_partition).idx_train_pos_pair = uint16(ix_pos_pair); % positive pairs for train set
+    Partition(idx_partition).idx_train_neg_pair = uint16(ix_neg_pair); % negative pairs for train set
 %     for k =1: num_trail
 %         % random permutated negative pairs for train set
 %         ix_radp(k,:) = randperm(length(ix_neg_pair));
