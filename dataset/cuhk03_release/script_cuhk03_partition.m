@@ -1,5 +1,7 @@
-
-dataset = 'cuhk03';
+clc
+clear
+%%
+dataset = 'cuhk03_detected';
 partition_name = 'Random';
 
 % num_gal = 3;
@@ -15,7 +17,7 @@ num_trail = 20;
 num_gal = 1;
 
 load('cuhk-03.mat');
-load('cuhk_03_labeled.mat');
+load(['..\' dataset '_Images.mat']);
 
 % transfer camera pair gID to globalID
 gID = gID + camPair*1000;
@@ -26,33 +28,38 @@ for idx_partition=1:num_partition
     % use predefined test id
     id_test = testsets{idx_partition}(:,1)*1000+testsets{idx_partition}(:,2);
     id_test = id_test';
-    % random pick 1260 ids as training
+    % random pick 1160 ids as training
     train_pool = setdiff(ID,id_test);
-    id_train = datasample(train_pool,1260,'Replace',false);
+    id_train = datasample(train_pool,1160,'Replace',false);
+    % random pick 100 ids as validation
+    valid_pool = setdiff(train_pool,id_train);
+    id_valid = datasample(valid_pool,100,'Replace',false);
     % find the index 
     tmpIDx_train = ismember(gID,id_train);
     tmpIDx_test = ismember(gID,id_test);
-
+    tmpIDx_valid = ismember(gID,id_valid);
+    
     Partition(idx_partition).idx_train =uint16(find(tmpIDx_train));
     Partition(idx_partition).idx_test =uint16(find(tmpIDx_test));
+    Partition(idx_partition).idx_valid = uint16(find(tmpIDx_valid));
     Partition(idx_partition).num_trainPerson = length(id_train);
 end
 
 
 % generate gallery part and prob part for both training and testing data.
 for idx_partition=1:num_partition
-    ID_train = gID(Partition(idx_partition).idx_train);
-    uID_train = unique(ID_train);
-    idx_train_gallery = zeros(num_trail, length(Partition(idx_partition).idx_train));
-    for m =1: length(unique(ID_train)) % for each person random choosing gallery sample
-        iix_tID = find(ID_train == uID_train(m) );
+    ID_valid = gID(Partition(idx_partition).idx_valid);
+    uID_valid = unique(ID_valid);
+    idx_valid_gallery = zeros(num_trail, length(Partition(idx_partition).idx_valid));
+    for m =1: length(unique(ID_valid)) % for each person random choosing gallery sample
+        iix_tID = find(ID_valid == uID_valid(m) );
         iix_temp = zeros(num_trail,num_gal);
         for t = 1:num_trail
             iix_temp(t,:) = randperm(length(iix_tID),num_gal);
         end
         for n = 1:num_gal
-            temp = sub2ind(size(idx_train_gallery), [1:num_trail], iix_tID(iix_temp(:,n)));
-            idx_train_gallery(temp)= 1; % gallery index in the training set for the individual of m.
+            temp = sub2ind(size(idx_valid_gallery), [1:num_trail], iix_tID(iix_temp(:,n)));
+            idx_valid_gallery(temp)= 1; % gallery index in the training set for the individual of m.
         end
     end    
     
@@ -70,14 +77,14 @@ for idx_partition=1:num_partition
             idx_test_gallery(temp)= 1; % gallery index in the training set for the individual of m.
         end        
     end
-    Partition(idx_partition).ix_train_gallery = idx_train_gallery>0;
+    Partition(idx_partition).ix_valid_gallery = idx_valid_gallery>0;
     Partition(idx_partition).ix_test_gallery = idx_test_gallery>0;
     
     % each camera pair should have unique pos-neg identity pairs
     camIDp = camID+camPair*10;
-    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_train,camIDp(Partition(idx_partition).idx_train),10);
-    Partition(idx_partition).idx_train_pos_pair = uint16(ix_pos_pair); % positive pairs for train set
-    Partition(idx_partition).idx_train_neg_pair = uint16(ix_neg_pair); % negative pairs for train set
+    [ix_pos_pair, ix_neg_pair]=GeneratePair(ID_valid,camIDp(Partition(idx_partition).idx_valid),10);
+    Partition(idx_partition).idx_valid_pos_pair = uint16(ix_pos_pair); % positive pairs for train set
+    Partition(idx_partition).idx_valid_neg_pair = uint16(ix_neg_pair); % negative pairs for train set
 %     for k =1: num_trail
 %         % random permutated negative pairs for train set
 %         ix_radp(k,:) = randperm(length(ix_neg_pair));

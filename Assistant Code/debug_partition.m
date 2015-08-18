@@ -5,11 +5,13 @@
 %%
 clc
 clear 
-datasetname = 'CAVIAR';
+datasetname = 'cuhk03_labeled';
 load(['Feature/' datasetname, '_Partition_Random.mat']);
-load(['dataset/', datasetname, '_Images.mat']);
+load(['dataset/', datasetname, '_Images.mat'],'gID','camPair');
 
-
+if strfind(datasetname, 'cuhk')
+    gID = gID + camPair*1000;
+end
 tmpID = randi(10,1,1)
 partition = Partition(tmpID);
 test = gID(partition.idx_test);
