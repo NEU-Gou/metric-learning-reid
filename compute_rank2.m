@@ -37,6 +37,12 @@ for k =1:size(ix_partition,1) % calculate the CMC for each random partition.
     dis = zeros(sum(ix_prob),sum(ix_ref));
     for c = 1:numel(test)
         A = Method{c}.P; % Projection vector
+        if gpuDeviceCount > 0 % use gpu to speed up
+            train{c} = gpuArray(train{c});
+            test{c} = gpuArray(test{c});
+            A = gpuArray(A);
+        end
+        
         if strcmp(Method{c}.name,'oLFDA')
             K_test = test{c}';
         else
@@ -64,6 +70,14 @@ for k =1:size(ix_partition,1) % calculate the CMC for each random partition.
     R(k, :) = r; 
     Alldist{k} = dis; % distance matrix
 end
+
+% copy data back to CPU
+if gpuDeviceCount > 0
+    R = gather(R);
+    Alldist = gather(Alldist);
+    ixx = gather(ixx);
+end
+
 return;
 
 % Calculate the kernel matrix for train and test set.
@@ -76,7 +90,6 @@ return;
 %       test: The data used to test and calculate the CMC for the
 %               algorithm. Each row is a sample vector. Nts-by-d
 function [K_test] = ComputeKernelTest(train, test, Method)
-
 if (size(train,2))>2e4 && (strcmp(Method.kernel, 'chi2') || strcmp(Method.kernel, 'chi2-rbf'))
     % if the input data matrix is too large then use parallel computing
     % tool box.

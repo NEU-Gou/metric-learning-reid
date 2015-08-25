@@ -55,12 +55,20 @@ for k =1:length(kname) % kernel for loop, select different kernel
         for iset = 1:2
             %% iset: 1. validation step, 2. testing step
             if iset == 1
-                %% inverse the training and testing set to validate the prior
-                idx_train = Partition(idx_partition).idx_test ;
-                idx_test = Partition(idx_partition).idx_train ;
-                ix_train_neg_pair = Partition(idx_partition).idx_test_neg_pair; % negative pair index
-                ix_train_pos_pair = Partition(idx_partition).idx_test_pos_pair; % positive pair index
-                ix_test_gallery =Partition(idx_partition).ix_train_gallery;
+                %% load validating data
+                if strfind(dataset_name,'cuhk') % cuhk has validate portion
+                    idx_train = Partition(idx_partition).idx_train ;
+                    idx_test = Partition(idx_partition).idx_valid ;
+                    ix_train_neg_pair = Partition(idx_partition).idx_train_neg_pair;
+                    ix_train_pos_pair = Partition(idx_partition).idx_train_pos_pair;
+                    ix_test_gallery =Partition(idx_partition).ix_valid_gallery;
+                else % inverse the training and testing set to validate the prior                     
+                    idx_train = Partition(idx_partition).idx_test ;
+                    idx_test = Partition(idx_partition).idx_train ;
+                    ix_train_neg_pair = Partition(idx_partition).idx_test_neg_pair; % negative pair index
+                    ix_train_pos_pair = Partition(idx_partition).idx_test_pos_pair; % positive pair index
+                    ix_test_gallery =Partition(idx_partition).ix_train_gallery;
+                end
             else
                 %% papre training and testing data
                 idx_train = Partition(idx_partition).idx_train ;

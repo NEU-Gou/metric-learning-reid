@@ -13,7 +13,13 @@
 
 
 function [K, Method] = ComputeKernel(X, kernel, Method)
-K= single(zeros(size(X,1)));
+info = whos('X');
+if strfind(info.class,'gpu')
+    fprintf('Using GPU now\n');
+    K = gpuArray.zeros(size(X,1),'single');
+else 
+    K = zeros(size(X,1),'single');
+end
 if (size(X,2))>2e4 && (strcmp(kernel, 'chi2') || strcmp(kernel, 'chi2-rbf'))
     matlabpool open
     switch kernel
@@ -69,5 +75,9 @@ else
             K =exp( -K/Method.rbf_sigma);
             clear subp sump;
     end
+end
+
+if strfind(info.class,'gpu')
+    K = gather(K);
 end
 return;
