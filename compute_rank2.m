@@ -34,7 +34,11 @@ for k =1:size(ix_partition,1) % calculate the CMC for each random partition.
     ref_ID = IDs(ix_ref);
     prob_ID = IDs(ix_prob);
     
-    dis = zeros(sum(ix_prob),sum(ix_ref));
+    if gpuDeviceCount > 0 
+        dis = gpuArray.zeros(sum(ix_prob),sum(ix_ref));
+    else
+        dis = zeros(sum(ix_prob),sum(ix_ref));
+    end
     for c = 1:numel(test)
         A = Method{c}.P; % Projection vector
         if gpuDeviceCount > 0 % use gpu to speed up
@@ -67,15 +71,21 @@ for k =1:size(ix_partition,1) % calculate the CMC for each random partition.
     end
     % returned ranking matrix, each row is the ranking for a reference/prob
     % set partition
-    R(k, :) = r; 
-    Alldist{k} = dis; % distance matrix
+    
+    
+    % copy data back to CPU
+    if gpuDeviceCount > 0
+        R(k, :) = gather(r); 
+        Alldist{k} = gather(dis); % distance matrix
+    else
+        R(k, :) = r; 
+        Alldist{k} = dis; % distance matrix
+    end
 end
 
-% copy data back to CPU
+% reset GPU memery if used
 if gpuDeviceCount > 0
-    R = gather(R);
-    Alldist = gather(Alldist);
-    ixx = gather(ixx);
+    reset(gpuDevice());
 end
 
 return;
@@ -93,20 +103,20 @@ function [K_test] = ComputeKernelTest(train, test, Method)
 if (size(train,2))>2e4 && (strcmp(Method.kernel, 'chi2') || strcmp(Method.kernel, 'chi2-rbf'))
     % if the input data matrix is too large then use parallel computing
     % tool box.
-    matlabpool open
+%     poolobj = parpool;
     
     switch Method.kernel
         case {'linear'}
             K_test = train * test';
         case {'chi2'}
-            parfor i =1:size(test,1)
+            for i =1:size(test,1)
                 dotp = bsxfun(@times, test(i,:), train);
                 sump = bsxfun(@plus, test(i,:), train);
                 K_test(:,i) = 2* sum(dotp./(sump+1e-10),2);
             end
         case {'chi2-rbf'}
             sigma = Method.rbf_sigma;
-            parfor i =1:size(test,1)
+            for i =1:size(test,1)
                 subp = bsxfun(@minus, test(i,:), train);
                 subp = subp.^2;
                 sump = bsxfun(@plus, test(i,:), train);
@@ -114,7 +124,7 @@ if (size(train,2))>2e4 && (strcmp(Method.kernel, 'chi2') || strcmp(Method.kernel
             end
             K_test =exp(-K_test./sigma);
     end
-    matlabpool close
+%     delete(poolobj)
 else
     switch Method.kernel
         case {'linear'}

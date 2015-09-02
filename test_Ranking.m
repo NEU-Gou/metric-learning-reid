@@ -86,7 +86,7 @@ for k =1:length(kname) % kernel for loop, select different kernel
                     train{c} = feature_set{c}(idx_train,:); % training set
                     test{c} = single(feature_set{c}(idx_test,:)); % test set                    
                 end
-            end
+            end           
             
             %% training step
             if ~strcmp(AlgoOption.name, 'LFDA') % setting the training pair samples
@@ -109,17 +109,17 @@ for k =1:length(kname) % kernel for loop, select different kernel
             for c = 1:numel(train)
                 switch AlgoOption.func
                     case {'MFA'}
-                        [algo{c}, V] = MFA(double(train{c}), gID(idx_train)', AlgoOption);
+                        [algo{c}, V] = MFA(single(train{c}), gID(idx_train)', AlgoOption);
                     case {'PCCA'}
                         [algo{c}, L, AKA] = PCCA(single(train{c}), ix_pair, y, AlgoOption);
                     case {'LFDA'}
-                        [algo{c}, V]= LFDA(double(train{c}),gID(idx_train)' ,AlgoOption);
+                        [algo{c}, V]= LFDA(single(train{c}),gID(idx_train)' ,AlgoOption);
                     case {'oLFDA'}
-                        [algo{c}, V]= oLFDA(double(train{c}),gID(idx_train)' ,AlgoOption);
+                        [algo{c}, V]= oLFDA(single(train{c}),gID(idx_train)' ,AlgoOption);
                     case {'svmml'}
-                        [algo{c}] = svmml_learn_full_final(train{c},gID(idx_train)',AlgoOption);
+                        [algo{c}] = svmml_learn_full_final(single(train{c}),gID(idx_train)',AlgoOption);
                     case {'KISSME'}                        
-                        [algo{c}] = kissme(train{c}',ix_pair,y,AlgoOption);
+                        [algo{c}] = kissme(single(train{c}'),ix_pair,y,AlgoOption);
 %                     case {'PRDC'}
 %                         [algo{c}] = LogPenalizedExpRankSubpsace_Seq(train{c},gID(idx_train)',AlgoOption);
                 end

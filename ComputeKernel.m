@@ -21,19 +21,19 @@ else
     K = zeros(size(X,1),'single');
 end
 if (size(X,2))>2e4 && (strcmp(kernel, 'chi2') || strcmp(kernel, 'chi2-rbf'))
-    matlabpool open
+%     poolobj = parpool;
     switch kernel
         case {'linear'}% linear kernel
             K = X*X';
         case {'chi2'}% chi2 kernel
-            parfor i =1:size(X,1)
+            for i =1:size(X,1)
                 dotp = bsxfun(@times, X(i,:), X);
                 sump = bsxfun(@plus, X(i,:), X);
                 K(i,:) = full(2* sum(dotp./(sump+1e-10),2));
             end
             clear subp sump;
         case {'chi2-rbf'}% chi2 RBF kernel
-            parfor i =1:size(X,1)
+            for i =1:size(X,1)
                 subp = bsxfun(@minus, X(i,:), X);
                 subp = subp.^2;
                 sump = bsxfun(@plus, X(i,:), X);
@@ -49,7 +49,7 @@ if (size(X,2))>2e4 && (strcmp(kernel, 'chi2') || strcmp(kernel, 'chi2-rbf'))
             K =exp( -K/Method.rbf_sigma);
             clear subp sump;
     end
-    matlabpool close;
+%     delete(poolobj);
 else
     switch kernel
         case {'linear'}% linear kernel

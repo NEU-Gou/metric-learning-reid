@@ -26,7 +26,15 @@ d = option.d;
 eps = option.epsilon;
 % compute the kernel matrix
 Method = struct('rbf_sigma',0);
+
+if gpuDeviceCount > 0 % use GPU
+    X = gpuArray(X);
+end
 [K, Method] = ComputeKernel(X, option.kernel, Method);
+% reset GPU memory if used
+if gpuDeviceCount > 0
+    reset(gpuDevice());
+end
 K=double(K);
 
 [Aff] = LocalScalingAffinity(K, option.LocalScalingNeighbor);
